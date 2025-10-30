@@ -1,125 +1,116 @@
 <template>
-  <div>
-    <!-- Mensaje de estado -->
-    <div v-if="message" :class="messageType">
-      {{ message }}
-    </div>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-logo">
+        <h1>rappi</h1>
+        <p>Crea tu cuenta</p>
+      </div>
 
-    <!-- Crear usuario -->
-    <h2>Crear usuario</h2>
-    <form @submit.prevent="handleCreate">
-      <input v-model="newUser.nombre" placeholder="Nombre" required />
-      <input v-model="newUser.email" placeholder="Email" required />
-      <input v-model="newUser.password" type="password" placeholder="Contraseña" required />
-      <select v-model="newUser.rol">
-        <option value="cliente">Cliente</option>
-        <option value="vendedor">Vendedor</option>
-        <option value="repartidor">Repartidor</option>
-      </select>
-      <button type="submit">Crear</button>
-    </form>
+      <div v-if="message" class="error-message">
+        {{ message }}
+      </div>
 
-    <!--
-    <hr />
+      <form @submit.prevent="handleCreate" class="login-form">
+        <div class="form-group">
+          <input
+            v-model="newUser.nombre"
+            type="text"
+            class="input"
+            placeholder="Nombre completo"
+            required
+          />
+        </div>
 
-    <h2>Lista de usuarios</h2>
-    <ul>
-      <li v-for="u in users" :key="u.id">
-        {{ u.nombre }} - {{ u.email }} - {{ u.rol }}
-        <button @click="handleDelete(u.id)">Eliminar</button>
-        <button @click="editUser(u)">Editar</button>
-      </li>
-    </ul>
+        <div class="form-group">
+          <input
+            v-model="newUser.email"
+            type="email"
+            class="input"
+            placeholder="Correo electrónico"
+            required
+          />
+        </div>
 
-    <div v-if="editingUser">
-      <h2>Editar usuario: {{ editingUser.nombre }}</h2>
-      <form @submit.prevent="handleUpdate">
-        <input v-model="editingUser.nombre" placeholder="Nombre" required />
-        <input v-model="editingUser.email" placeholder="Email" required />
-        <input v-model="editingUser.password" type="password" placeholder="Contraseña" />
-        <select v-model="editingUser.rol">
-          <option value="cliente">Cliente</option>
-          <option value="vendedor">Vendedor</option>
-          <option value="repartidor">Repartidor</option>
-        </select>
-        <button type="submit">Actualizar</button>
-        <button type="button" @click="cancelEdit">Cancelar</button>
+        <div class="form-group">
+          <input
+            v-model="newUser.password"
+            type="password"
+            class="input"
+            placeholder="Contraseña"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <select v-model="newUser.rol" class="input" required>
+            <option value="" disabled selected>Selecciona tu rol</option>
+            <option value="cliente">Cliente</option>
+            <option value="vendedor">Vendedor</option>
+            <option value="repartidor">Repartidor</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" :disabled="loading">
+          {{ loading ? 'Creando cuenta...' : 'Registrarse' }}
+        </button>
       </form>
+
+      <div class="text-center mt-4">
+        <p class="text-sm">
+          ¿Ya tienes una cuenta?
+          <router-link to="/login" class="text-rappi-red hover:underline">
+            Inicia sesión
+          </router-link>
+        </p>
+      </div>
     </div>
-    -->
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { getUsers, createUser, updateUser, deleteUser } from '../services/usersService.js'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
-const users = ref([])
+const router = useRouter()
+const authStore = useAuthStore()
 
 const newUser = ref({
   nombre: '',
   email: '',
   password: '',
-  rol: 'cliente',
+  rol: '',
 })
 
-const editingUser = ref(null)
-
+const loading = ref(false)
 const message = ref('')
-const messageType = ref('')
 
-const showMessage = (text, type = 'success') => {
-  message.value = text
-  messageType.value = type
-  setTimeout(() => {
-    message.value = ''
-  }, 3000)
-}
-
-// Cargar usuarios
-const loadUsers = async () => {
-  try {
-    users.value = await getUsers()
-  } catch (error) {
-    showMessage('Error cargando usuarios', 'error')
-  }
-}
-
-onMounted(loadUsers)
-
-// Crear usuario
 const handleCreate = async () => {
-  try {
-    await createUser(newUser.value)
-    newUser.value = { nombre: '', email: '', password: '', rol: 'cliente' }
-    showMessage('Usuario creado correctamente', 'success')
-    loadUsers()
-  } catch (error) {
-    showMessage('Error al crear usuario', 'error')
+  if (
+    !newUser.value.nombre ||
+    !newUser.value.email ||
+    !newUser.value.password ||
+    !newUser.value.rol
+  ) {
+    message.value = 'Por favor completa todos los campos'
+    return
   }
-}
 
-// Editar usuario
-const editUser = (user) => {
-  editingUser.value = { ...user } // Copia superficial
-}
-
-// Cancelar edición
-const cancelEdit = () => {
-  editingUser.value = null
-}
-
-// Actualizar usuario
-const handleUpdate = async () => {
   try {
-    const dataToSend = { ...editingUser.value }
-    if (!dataToSend.password) delete dataToSend.password
-    await updateUser(dataToSend.id, dataToSend)
-    editingUser.value = null
-    showMessage('Usuario actualizado correctamente', 'success')
-    loadUsers()
+    loading.value = true
+    await authStore.register(newUser.value)
+    message.value = '¡Cuenta creada exitosamente!'
+    setTimeout(() => {
+      router.push('/login')
+    }, 1500)
   } catch (error) {
-    showMessage('Error al actualizar usuario', 'error')
+    message.value = error.message || 'Error al crear la cuenta'
+  } finally {
+    loading.value = false
   }
 }
 </script>
+
+<style scoped>
+/* Los estilos ya están en global.css */
+</style>

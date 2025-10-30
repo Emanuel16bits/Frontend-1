@@ -1,39 +1,36 @@
 import axios from 'axios'
 
-const API_URL = 'http://localhost:3000/restaurants'
+const API_URL = 'http://localhost:3000/api' // Ajusta según tu configuración
 
-// Obtener todos los restaurantes
-export const getRestaurants = async () => {
-  const response = await axios.get(API_URL)
-  return response.data
-}
+export default {
+  async getAll() {
+    const response = await axios.get(`${API_URL}/restaurants`)
+    return response.data
+  },
 
-// Obtener un restaurante por ID
-export const getRestaurantById = async (id) => {
-  const response = await axios.get(`${API_URL}/${id}`)
-  return response.data
-}
+  async getById(id) {
+    const response = await axios.get(`${API_URL}/restaurants/${id}`)
+    return response.data
+  },
 
-// Crear un nuevo restaurante
-export const createRestaurant = async (restaurantData) => {
-  const response = await axios.post(API_URL, restaurantData)
-  return response.data
-}
+  async create(restaurantData) {
+    const response = await axios.post(`${API_URL}/restaurants`, restaurantData)
+    return response.data
+  },
 
-// Actualizar un restaurante completo (PUT)
-export const updateRestaurant = async (id, restaurantData) => {
-  const response = await axios.put(`${API_URL}/${id}`, restaurantData)
-  return response.data
-}
+  async update(id, restaurantData) {
+    const response = await axios.put(`${API_URL}/restaurants/${id}`, restaurantData)
+    return response.data
+  },
 
-// Actualizar parcialmente un restaurante (PATCH)
-export const patchRestaurant = async (id, partialData) => {
-  const response = await axios.patch(`${API_URL}/${id}`, partialData)
-  return response.data
-}
+  async delete(id) {
+    await axios.delete(`${API_URL}/restaurants/${id}`)
+  },
 
-// Eliminar un restaurante
-export const deleteRestaurant = async (id) => {
-  const response = await axios.delete(`${API_URL}/${id}`)
-  return response.data
+  async search(query) {
+    const response = await axios.get(`${API_URL}/restaurants/search`, {
+      params: { q: query },
+    })
+    return response.data
+  },
 }
